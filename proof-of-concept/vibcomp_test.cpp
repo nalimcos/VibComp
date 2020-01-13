@@ -28,10 +28,10 @@ unsigned int fil_temp = 230;
 double Ek = line_a / fil_a;
 // Printed square dimensions
 double w = 40;
-double h = 5; // per zone, total is *zones
-int zone_i = 0;
-int zone_f = 1;
-double layers = h/layer_h;
+double h = 5; // per zone, total is h*(1+zone_f-zone_i)
+int zone_i = 4;
+int zone_f = 12;
+//double layers = h/layer_h;
 // Start pos
 double x_0 = 125;
 double y_0 = 75;
@@ -109,8 +109,8 @@ int main()
 	double last_corr_l = 0;
 	for (int i = zone_i; i <= zone_f; i += 1)
 	{
-//		double Tc = i*0.001;
-		double Tc = i*0.007;
+		double Tc = i*0.001;
+//		double Tc = i*0.007; use for demo on my printer with zone_i = 0 and zone_f = 1
 		double corr_l = v*Tc;
 		while (cur_z < h*(i-zone_i+1))
 		{
