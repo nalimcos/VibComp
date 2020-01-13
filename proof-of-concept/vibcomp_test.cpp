@@ -28,10 +28,11 @@ unsigned int fil_temp = 230;
 double Ek = line_a / fil_a;
 // Printed square dimensions
 double w = 40;
-double h = 5; // per zone, total is h*(1+zone_f-zone_i)
-int zone_i = 4;
-int zone_f = 12;
-//double layers = h/layer_h;
+double h = 8; // per zone, total is *zones
+int zone_i = 0;
+int zone_f = 1;
+double zone_k = 0.005;
+double layers = h/layer_h;
 // Start pos
 double x_0 = 125;
 double y_0 = 75;
@@ -58,12 +59,12 @@ void g0(double x, double y)
 }
 
 // Print move; automatically extrude correct amount
-void g1(double x, double y)
+void g1(double x, double y, double vk)
 {
 	cur_e += pow(pow(x-cur_x,2)+pow(y-cur_y,2),0.5) * Ek; // segment length * Ek
 	cur_x = x;
 	cur_y = y;
-	fprintf(outfile,"G1 X%.2f Y%.2f E%.3f F%u\n", cur_x, cur_y, cur_e, v*60);
+	fprintf(outfile,"G1 X%.2f Y%.2f E%.3f F%.0f\n", cur_x, cur_y, cur_e, vk*v*60);
 }
 
 // Move to new layer during print move - no time to loose :p
@@ -91,37 +92,37 @@ int main()
 	for(int i = 0; i < skirt_lines; i++)
 	{
 		// 1
-		g1(	x_0 - 9 + i,		y_0 - 10 + i);
+		g1(	x_0 - 9 + i,		y_0 - 10 + i,		1);
 		// 2
-		g1(	x_0 + w + 9 - i,	y_0 - 10 + i);
-		g1(	x_0 + w + 10 - i,	y_0 - 9 + i);
+		g1(	x_0 + w + 9 - i,	y_0 - 10 + i,		1);
+		g1(	x_0 + w + 10 - i,	y_0 - 9 + i,		1);
 		// 3
-		g1(	x_0 + w + 10 - i,	y_0 + w + 9 - i);
-		g1(	x_0 + w + 9 - i,	y_0 + w + 10 - i);
+		g1(	x_0 + w + 10 - i,	y_0 + w + 9 - i,	1);
+		g1(	x_0 + w + 9 - i,	y_0 + w + 10 - i,	1);
 		// 4
-		g1(	x_0 - 9 + i,		y_0 + w + 10 - i);
-		g1(	x_0 - 10 + i,		y_0 + w + 9 - i);
+		g1(	x_0 - 9 + i,		y_0 + w + 10 - i,	1);
+		g1(	x_0 - 10 + i,		y_0 + w + 9 - i,	1);
 		// Back to 1
-		g1(	x_0 - 10 + i,		y_0 - 9 + i);
+		g1(	x_0 - 10 + i,		y_0 - 9 + i,		1);
 	}
 	// Start actual print
 	g0(x_0, y_0);
 	double last_corr_l = 0;
 	for (int i = zone_i; i <= zone_f; i += 1)
 	{
-		double Tc = i*0.001;
-//		double Tc = i*0.007; use for demo on my printer with zone_i = 0 and zone_f = 1
+		double Tc = i*zone_k;
+//		double Tc = i*0.007;
 		double corr_l = v*Tc;
 		while (cur_z < h*(i-zone_i+1))
 		{
-			fprintf(outfile, "\n; Start layer Z=%.2f\n; Tc = %.3f\n", cur_z, Tc);
-			g1(x_0 + corr_l, y_0);
-			g1(x_0 + w - corr_l, y_0);
-			g1(x_0 + w, y_0 + corr_l);
-			g1(x_0 + w, y_0 + w - corr_l);
-			g1(x_0 + w - corr_l, y_0 + w);
-			g1(x_0 + corr_l, y_0 + w);
-			g1(x_0, y_0 + w - corr_l);
+			fprintf(outfile, "\n; Start layer Z=%.2f\n; Tc = %.4f\n", cur_z, Tc);
+			g1(x_0 + corr_l, y_0, 1/sqrt(2));
+			g1(x_0 + w - corr_l, y_0, 1);
+			g1(x_0 + w, y_0 + corr_l, 1/sqrt(2));
+			g1(x_0 + w, y_0 + w - corr_l, 1);
+			g1(x_0 + w - corr_l, y_0 + w, 1/sqrt(2));
+			g1(x_0 + corr_l, y_0 + w, 1);
+			g1(x_0, y_0 + w - corr_l, 1/sqrt(2));
 	//		g1(x_0, y_0 + w/2);
 			g1_layerup(x_0, y_0 + corr_l);
 		}
